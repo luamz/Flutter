@@ -1,4 +1,4 @@
-package luamz.contador_de_pessoas
+package luamz.acess_control
 
 import io.flutter.embedding.android.FlutterActivity
 
