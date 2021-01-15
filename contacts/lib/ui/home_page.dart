@@ -1,6 +1,5 @@
 import 'dart:io';
-
-import 'package:flutter/cupertino.dart';
+import 'package:contacts/ui/contact_page.dart';
 import 'package:flutter/material.dart';
 import 'package:contacts/helpers/contact_helper.dart';
 import 'package:flutter/widgets.dart';
@@ -11,19 +10,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomeState extends State<HomePage> {
-
   ContactHelper helper = ContactHelper();
   List<Contact> contacts = [];
 
   @override
   void initState() {
     super.initState();
-
-    helper.getAllContacts().then((list){
-      setState(() {
-        contacts = list;
-      });
-    });
+    _getAllContacts();
   }
 
   @override
@@ -36,24 +29,26 @@ class _HomeState extends State<HomePage> {
       ),
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
-        onPressed: null,
+        onPressed: () {
+          _showContactPage();
+        },
         child: Icon(Icons.add),
         backgroundColor: Colors.blueGrey,
       ),
       body: ListView.builder(
         padding: EdgeInsets.all(10),
         itemCount: contacts.length,
-        itemBuilder: (context, index){
+        itemBuilder: (context, index) {
           return _contactCard(context, index);
         },
       ),
     );
   }
-  
-  Widget _contactCard(BuildContext context, int index){
+
+  Widget _contactCard(BuildContext context, int index) {
     return GestureDetector(
-        child: Card(
-          child: Padding(
+      child: Card(
+        child: Padding(
             padding: EdgeInsets.all(10),
             child: Row(
               children: <Widget>[
@@ -63,34 +58,72 @@ class _HomeState extends State<HomePage> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     image: DecorationImage(
-                      image: contacts[index].img != null ?
-                      FileImage(File(contacts[index].img)) // If the contact has a photo
-                          : AssetImage("images/person.png") // Else, we use the standard
-                    ),
+                        image: contacts[index].img != null
+                            ? FileImage(File(contacts[index]
+                                .img)) // If the contact has a photo
+                            : AssetImage(
+                                "images/person.png") // Else, we use the standard
+                        ),
                   ),
                 ),
-                Padding(padding: (
-                    EdgeInsets.only(right: 20)),
-                    child: Column(
+                Padding(
+                  padding: (EdgeInsets.only(right: 20)),
+                  child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: <Widget>[
-                        Text(contacts[index].name ?? "",
-                        style: TextStyle(fontSize:  20,
-                        fontWeight: FontWeight.bold),),
-                        Text(contacts[index].email ?? "",
-                          style: TextStyle(fontSize:  18),),
-                        Text(contacts[index].phone ?? "",
-                          style: TextStyle(fontSize:  18,),),
-
-
-                      ]
-                    ),
+                        Text(
+                          contacts[index].name ?? "",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          contacts[index].email ?? "",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                        Text(
+                          contacts[index].phone ?? "",
+                          style: TextStyle(
+                            fontSize: 18,
+                          ),
+                        ),
+                      ]),
                 )
-
               ],
-            )
-        ),
+            )),
       ),
+      onTap: () {
+        _showContactPage(contact: contacts[index]);
+      },
     );
+  }
+
+  // To link to another page
+  void _showContactPage({Contact contact}) async {
+    final _recContact = await Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => ContactPage(
+                  contact: contact,
+                )));
+
+    if (_recContact != null) {
+      // If something changed
+      if (contact != null) {
+        // If the contact already exists
+        await helper.updateContact(_recContact); // Updates contact
+      } else {
+        // If it didn't previously exist
+        await helper.saveContact(_recContact); // Just save it
+      }
+      _getAllContacts(); // Reload
+    }
+  }
+
+  void _getAllContacts() {
+    helper.getAllContacts().then((list) {
+      setState(() {
+        contacts = list;
+      });
+    });
   }
 }
